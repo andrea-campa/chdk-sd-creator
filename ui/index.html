@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CHDK SD Creator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="rail">
+      <div class="brand">
+        <img src="icon.png" alt="" width="36" height="36" />
+        <div>
+          <strong>CHDK SD Creator</strong>
+          <span>Canon Hack Development Kit</span>
+        </div>
+      </div>
+      <ol class="steps" id="steps">
+        <li data-step="camera"><span class="num">1</span><span class="label">Camera<small id="sum-camera">Not chosen</small></span></li>
+        <li data-step="method"><span class="num">2</span><span class="label">Start method<small id="sum-method">Not chosen</small></span></li>
+        <li data-step="card"><span class="num">3</span><span class="label">SD card<small id="sum-card">Not chosen</small></span></li>
+        <li data-step="firmware"><span class="num">4</span><span class="label">Firmware<small id="sum-firmware">Not chosen</small></span></li>
+        <li data-step="install"><span class="num">5</span><span class="label">Install<small id="sum-install">&nbsp;</small></span></li>
+      </ol>
+      <div class="theme-switch" id="theme" role="radiogroup" aria-label="Appearance">
+        <button data-theme-choice="system" title="Follow system">System</button>
+        <button data-theme-choice="light" title="Light">Light</button>
+        <button data-theme-choice="dark" title="Dark">Dark</button>
+      </div>
+      <p class="rail-foot">Builds from <a href="#" data-href="https://mighty-hoernsche.de/">mighty-hoernsche.de</a>.<br />CHDK never changes your camera’s firmware permanently.</p>
+    </aside>
+
+    <main>
+      <!-- 1. Camera -->
+      <section class="panel" data-panel="camera">
+        <header>
+          <h1>Which camera?</h1>
+          <p>Pick your camera model. More models will be added over time.</p>
+        </header>
+        <input type="search" id="camera-search" class="search" placeholder="Search by name, e.g. SD790" hidden />
+        <div class="camera-grid" id="camera-list"></div>
+        <footer><span></span><button class="primary" data-next="method" id="camera-next" disabled>Continue</button></footer>
+      </section>
+
+      <!-- 2. Start method -->
+      <section class="panel" data-panel="method" hidden>
+        <header>
+          <h1>How should CHDK start?</h1>
+          <p>This decides how the SD card has to be formatted in the next step.</p>
+        </header>
+        <div class="choice-row">
+          <label class="choice" id="method-fi2"><input type="radio" name="method" value="fi2" checked />
+            <span><strong>Firmware Update menu <em>recommended</em></strong>
+              <small>Start the camera in Playback, then Menu → Firmware Update → OK. Repeat after each power-on. Card stays unlocked.</small></span></label>
+          <label class="choice" id="method-autoboot"><input type="radio" name="method" value="autoboot" />
+            <span><strong>Autoboot</strong>
+              <small>CHDK starts every time the card is <em>locked</em>. Needs your Mac password to mark the card.</small></span></label>
+        </div>
+        <p class="muted" id="method-fs-hint"></p>
+        <footer><button class="ghost" data-next="camera">Back</button><button class="primary" data-next="card">Continue</button></footer>
+      </section>
+
+      <!-- 3. Card -->
+      <section class="panel" data-panel="card" hidden>
+        <header>
+          <h1>Choose the SD card</h1>
+          <p>Insert the card into your Mac. Only FAT-formatted removable cards are listed.</p>
+        </header>
+        <div class="toolbar">
+          <button id="card-refresh" class="ghost">↻ Refresh</button>
+          <span class="muted" id="card-status"></span>
+        </div>
+        <div class="list" id="card-list"></div>
+        <p class="warn" id="card-warn" hidden></p>
+        <details class="box" id="format-box">
+          <summary id="format-summary">Format this card…</summary>
+          <p id="format-desc"></p>
+          <p>Erases <strong>everything</strong> on the card.</p>
+          <button class="danger" id="format-btn">Erase and format…</button>
+        </details>
+        <footer><button class="ghost" data-next="method">Back</button><button class="primary" data-next="firmware" id="card-next" disabled>Continue</button></footer>
+      </section>
+
+      <!-- 4. Firmware -->
+      <section class="panel" data-panel="firmware" hidden>
+        <header>
+          <h1>Firmware version</h1>
+          <p>CHDK must exactly match the firmware in your camera.</p>
+        </header>
+        <div class="seg" id="channel">
+          <button data-channel="stable" class="on">Stable</button>
+          <button data-channel="trunk">Development</button>
+        </div>
+        <div class="fw-grid" id="fw-list"></div>
+        <p class="muted" id="fw-status"></p>
+        <details class="box" id="fw-help">
+          <summary>How do I find my firmware version?</summary>
+          <ol id="fw-steps"></ol>
+          <p><button id="verreq-btn" class="ghost">Put <code id="verreq-name">ver.req</code> on the card</button>
+            <span class="muted" id="verreq-status"></span></p>
+          <p class="muted small">The camera only shows the version when this empty file is on the card. Eject the card, check the version in the camera, then put the card back.</p>
+        </details>
+        <footer><button class="ghost" data-next="card">Back</button><button class="primary" data-next="install" id="fw-next" disabled>Continue</button></footer>
+      </section>
+
+      <!-- 5. Install -->
+      <section class="panel" data-panel="install" hidden>
+        <div id="install-setup" class="stack">
+          <header>
+            <h1>Install CHDK</h1>
+            <p id="install-summary"></p>
+          </header>
+          <h2>Package</h2>
+          <div class="seg" id="package">
+            <button data-full="1" class="on">Full <small>scripts, fonts, docs</small></button>
+            <button data-full="0">Small <small>core only</small></button>
+          </div>
+        </div>
+
+        <div class="progress" id="progress" hidden>
+          <div class="bar"><div id="bar-fill"></div></div>
+          <ul class="log" id="log"></ul>
+        </div>
+        <div class="box" id="fda-help" hidden>
+          <h2 class="fda-title">Allow access to the card</h2>
+          <ol>
+            <li>Click <strong>Open Full Disk Access</strong>.</li>
+            <li>Click <strong>+</strong> under the list (or drag the app in from Finder), choose <strong>CHDK SD Creator</strong>, and turn it on.</li>
+            <li>Click <strong>Restart app</strong>, then press <strong>Install CHDK</strong> again.</li>
+          </ol>
+          <p><button class="primary" id="fda-open">Open Full Disk Access</button> <button class="ghost" id="fda-reveal">Show app in Finder</button> <button class="ghost" id="fda-restart">Restart app</button></p>
+        </div>
+        <div class="done" id="done" hidden>
+          <div class="hero">
+            <div class="hero-mark" aria-hidden="true">
+              <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" /><path d="M14 24.5l6.5 6.5L34 17.5" /></svg>
+            </div>
+            <div>
+              <h1>CHDK is ready</h1>
+              <p id="done-sub"></p>
+            </div>
+          </div>
+          <div class="facts" id="done-facts"></div>
+          <div class="card-actions">
+            <button class="primary big" id="eject-btn">Eject card</button>
+            <button class="ghost" id="reveal-btn">Show in Finder</button>
+          </div>
+
+          <h2 id="steps-title">Start CHDK on your camera</h2>
+          <ol class="howto" id="next-steps"></ol>
+
+          <details class="box">
+            <summary>Good to know about the <span id="tips-camera"></span></summary>
+            <ul class="notes" id="cam-notes"></ul>
+          </details>
+          <details class="box" id="trouble">
+            <summary>The camera shows an error or doesn’t start CHDK</summary>
+            <ul class="notes" id="trouble-list"></ul>
+          </details>
+          <details class="box">
+            <summary>Install log</summary>
+            <ul class="log" id="done-log"></ul>
+          </details>
+        </div>
+        <footer id="install-footer"><button class="ghost" data-next="firmware" id="install-back">Back</button><button class="primary" id="install-btn">Install CHDK</button></footer>
+        <footer id="done-footer" hidden><span></span><button class="ghost" id="again-btn">Prepare another card</button></footer>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="confirm">
+    <form method="dialog">
+      <h2 id="confirm-title"></h2>
+      <p id="confirm-text"></p>
+      <div class="dialog-actions">
+        <button value="cancel" class="ghost">Cancel</button>
+        <button value="ok" class="danger" id="confirm-ok">OK</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="fda-dialog">
+    <form method="dialog">
+      <div class="dialog-icon" aria-hidden="true">
+        <svg viewBox="0 0 40 40"><rect x="9" y="17" width="22" height="17" rx="3" /><path d="M14 17v-4a6 6 0 0 1 12 0v4" /></svg>
+      </div>
+      <h2>Allow Full Disk Access</h2>
+      <p>To make a card start CHDK automatically (autoboot), this app has to write to the card directly. macOS only allows that once you turn on <strong>Full Disk Access</strong> for CHDK SD Creator.</p>
+      <ol class="small">
+        <li>Click <strong>Open Settings</strong>.</li>
+        <li>Turn on <strong>CHDK SD Creator</strong>. If it isn’t listed, click <strong>+</strong> and choose it (use <strong>Show App</strong> to find it).</li>
+        <li>Come back and click <strong>Restart App</strong>.</li>
+      </ol>
+      <p class="muted small">Not needed if you only use the Firmware Update method.</p>
+      <div class="dialog-actions">
+        <button value="later" class="ghost">Not now</button>
+        <button type="button" class="ghost" id="fdad-reveal">Show App</button>
+        <button type="button" class="ghost" id="fdad-restart" hidden>Restart App</button>
+        <button type="button" class="primary" id="fdad-open">Open Settings</button>
+      </div>
+    </form>
+  </dialog>
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

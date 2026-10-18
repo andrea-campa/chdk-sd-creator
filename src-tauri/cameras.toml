@@ -1,0 +1,41 @@
+# Camera registry. To add a camera, append another [[camera]] block.
+#
+# id              CHDK platform name, as used in autobuild file names
+#                 (e.g. ixus90_sd790-100c-1.6.1-6355-full.zip)
+# firmwares       firmware versions CHDK supports (checked against the autobuild)
+# fi2             camera can load CHDK via Menu > Firmware Update (PS.FI2)
+# fat32_autoboot  camera can autoboot from a FAT32 card (most cameras from 2011 on);
+#                 if false, autoboot needs a FAT16 partition
+# multipart       after booting from the first partition, CHDK switches the camera
+#                 to the card's first FAT32 partition (CAM_MULTIPART in CHDK)
+# max_card_gb     largest card the camera accepts
+# ver_req         file name that unlocks the firmware version display
+#                 ("ver.req" on DryOS, "vers.req" on VxWorks)
+
+[[camera]]
+id = "ixus90_sd790"
+name = "IXUS 90 IS"
+aliases = ["PowerShot SD790 IS", "Digital ELPH SD790 IS", "IXY Digital 95 IS"]
+year = 2008
+os = "DryOS"
+processor = "DIGIC III"
+usb_pid = 0x3174
+firmwares = ["100c", "100d", "100e"]
+fi2 = true
+fat32_autoboot = false
+multipart = true
+ver_req = "ver.req"
+max_card_gb = 32  # SDHC
+fw_check = [
+  "The version in the camera’s normal menu or in photo info (e.g. “1.0.0.0”) leaves out the letter CHDK needs. Use the steps below to see the full version.",
+  "Press the button below to put an empty ver.req file on the card, then eject it.",
+  "Put the card in the camera and switch it on in Playback mode.",
+  "Hold FUNC./SET, then press DISP.",
+  "The screen shows a line like “Firmware Ver GM1.00C”. The last three characters (1.00C → 100c) are your firmware version.",
+]
+notes = [
+  "With autoboot the camera always starts in Playback mode; half-press the shutter to switch to shooting.",
+  "With Firmware Update you must start the camera in Playback mode to reach the menu entry.",
+  "The Direct Print button is the CHDK <ALT> key. Hold it to use its normal Canon function.",
+  "RAW/DNG may occasionally not be saved if the shutter is pressed very quickly.",
+]

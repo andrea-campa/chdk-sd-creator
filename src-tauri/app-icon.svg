@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b2f36"/>
+      <stop offset="1" stop-color="#16181c"/>
+    </linearGradient>
+    <radialGradient id="glass" cx="0.4" cy="0.38" r="0.7">
+      <stop offset="0" stop-color="#5a7fa8"/>
+      <stop offset="0.55" stop-color="#1d2a3a"/>
+      <stop offset="1" stop-color="#0b0f15"/>
+    </radialGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bg)"/>
+  <!-- SD card silhouette -->
+  <path d="M300 200 H640 L760 320 V824 H300 Z" fill="#e8e3d8"/>
+  <g fill="#c9c2b3">
+    <rect x="350" y="230" width="44" height="110" rx="10"/>
+    <rect x="420" y="230" width="44" height="110" rx="10"/>
+    <rect x="490" y="230" width="44" height="110" rx="10"/>
+    <rect x="560" y="230" width="44" height="110" rx="10"/>
+  </g>
+  <!-- lens -->
+  <circle cx="530" cy="590" r="170" fill="#22252b"/>
+  <circle cx="530" cy="590" r="140" fill="#3a3f47"/>
+  <circle cx="530" cy="590" r="108" fill="url(#glass)"/>
+  <circle cx="490" cy="550" r="26" fill="#ffffff" opacity="0.55"/>
+  <!-- red accent -->
+  <rect x="300" y="770" width="460" height="54" fill="#d7372f"/>
+</svg>
