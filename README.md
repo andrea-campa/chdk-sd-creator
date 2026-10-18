@@ -3,7 +3,7 @@
 A Tauri desktop app that prepares an SD card with [CHDK](https://chdk.fandom.com/wiki/CHDK) for Canon PowerShot / IXUS cameras.
 It's a four-step wizard: **Camera → SD card → Firmware → Install**.
 
-Supported so far: **Canon IXUS 90 IS** (PowerShot SD790 IS / IXY Digital 95 IS), firmware 1.00C, 1.00D and 1.00E.
+Supports every Canon camera with a CHDK build (146 models), searchable by any of their names: IXUS, ELPH, SD, IXY or PowerShot.
 
 ## What it does
 
@@ -19,9 +19,19 @@ Supported so far: **Canon IXUS 90 IS** (PowerShot SD790 IS / IXY Digital 95 IS),
 - Writes `ver.req`, so the camera shows its firmware version.
 - Formats the card as FAT32, or as a FAT16 partition for autoboot (up to 2 GB; on bigger cards the rest becomes a second partition). It always asks you to confirm first.
 
-## Adding a camera
+## Camera list
 
-Add a `[[camera]]` block to [`src-tauri/cameras.toml`](src-tauri/cameras.toml). The `id` must match the CHDK platform name used in the autobuild zip names (for example `ixus90_sd790-100c-1.6.1-6355-full.zip`). The `camnotes.txt` file in each build says whether the camera supports FI2 and how it boots.
+`src-tauri/cameras.toml` is generated; don't edit it by hand. To refresh it, for example after new cameras are added to CHDK, run:
+
+```bash
+python3 tools/gen_cameras.py
+```
+
+The generator combines four sources:
+- **CHDK build server:** which cameras and firmware versions can be downloaded.
+- **CHDK source:** USB ID, DryOS release, DIGIC version and multi-partition support. DryOS r47 and later can autoboot from FAT32.
+- **End of one build zip per camera:** whether it includes `PS.FI2`, which is needed for the Firmware Update method.
+- **`src-tauri/cameras.overrides.toml`:** hand-written details such as marketing names, notes and card limits. These always win.
 
 ## Development
 

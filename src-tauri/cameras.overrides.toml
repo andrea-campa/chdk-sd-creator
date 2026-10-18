@@ -1,0 +1,14 @@
+# Hand-written details layered over the generated camera list.
+# tools/gen_cameras.py merges these into cameras.toml; any field set here wins.
+
+[ixus90_sd790]
+name = "IXUS 90 IS"
+aliases = ["PowerShot SD790 IS", "Digital ELPH SD790 IS", "IXY Digital 95 IS"]
+year = 2008
+max_card_gb = 32  # SDHC
+notes = [
+  "With autoboot the camera always starts in Playback mode; half-press the shutter to switch to shooting.",
+  "With Firmware Update you must start the camera in Playback mode to reach the menu entry.",
+  "The Direct Print button is the CHDK <ALT> key. Hold it to use its normal Canon function.",
+  "RAW/DNG may occasionally not be saved if the shutter is pressed very quickly.",
+]

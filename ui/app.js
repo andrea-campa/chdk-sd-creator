@@ -102,34 +102,105 @@ function renderRail() {
 
 /* ---------- 1. camera ---------- */
 
+const norm = (s) => s.toLowerCase().replace(/[\s\-_.\/]/g, "");
+let cameraIndex = []; // [{cam, hay, names}]
+let series = "All";
+let visibleCameras = [];
+
+function buildCameraIndex() {
+  cameraIndex = state.cameras.map((cam) => {
+    const names = [cam.name, ...cam.aliases].map(norm);
+    return { cam, names, hay: [...names, norm(cam.id), norm(cam.series || "")].join("|") };
+  });
+  const counts = {};
+  for (const c of state.cameras) counts[c.series || "Other"] = (counts[c.series || "Other"] || 0) + 1;
+  const order = ["IXUS / ELPH", "PowerShot A", "PowerShot SX", "PowerShot G", "PowerShot S", "PowerShot D", "EOS", "Other"];
+  const chips = ["All", ...order.filter((s) => counts[s])];
+  $("#series-chips").replaceChildren(...chips.map((s) => {
+    const b = el("button", { className: "chip", role: "radio" }, s);
+    b.dataset.series = s;
+    b.onclick = () => { series = s; renderCameras(); };
+    return b;
+  }));
+  $("#camera-search").placeholder = `Search ${state.cameras.length} models, e.g. SX130, SD790, ELPH 160, G12`;
+}
+
+function filterCameras() {
+  const raw = $("#camera-search").value.trim();
+  const tokens = raw.split(/\s+/).map(norm).filter(Boolean);
+  const whole = norm(raw);
+  const hits = cameraIndex.filter((e) =>
+    (series === "All" || (e.cam.series || "Other") === series) &&
+    tokens.every((t) => e.hay.includes(t)));
+  // Best first: a name starting with the query, then one containing it, then the rest.
+  const rank = (e) => !whole ? 0
+    : e.names.some((n) => n.startsWith(whole) || n.replace(/^(powershot|ixus|digitalelph|eos)/, "").startsWith(whole)) ? 0
+    : e.names.some((n) => n.includes(whole)) ? 1 : 2;
+  return hits
+    .map((e) => [rank(e), e.cam])
+    .sort((a, b) => a[0] - b[0] || a[1].name.localeCompare(b[1].name, undefined, { numeric: true }))
+    .map(([, cam]) => cam);
+}
+
+function selectCamera(cam) {
+  if (state.camera?.id !== cam.id) {
+    state.camera = cam;
+    state.firmware = null;
+    state.builds = [];
+    try { localStorage.setItem("camera", cam.id); } catch {}
+  }
+  renderCameras();
+  renderRail();
+}
+
 function renderCameras() {
-  const q = $("#camera-search").value.trim().toLowerCase();
+  $$("#series-chips .chip").forEach((b) => {
+    b.classList.toggle("on", b.dataset.series === series);
+    b.setAttribute("aria-checked", String(b.dataset.series === series));
+  });
+  visibleCameras = filterCameras();
   const list = $("#camera-list");
   list.replaceChildren();
-  for (const cam of state.cameras) {
-    const hay = [cam.name, cam.id, ...cam.aliases].join(" ").toLowerCase();
-    if (q && !hay.includes(q)) continue;
-    const tile = el("button", { className: "item" + (state.camera?.id === cam.id ? " selected" : "") },
-      el("div", { className: "title" }, `Canon ${cam.name}`),
-      el("div", { className: "sub" }, cam.aliases.join(" · ")),
-      el("div", { className: "tags" },
-        el("span", { className: "tag" }, String(cam.year)),
-        el("span", { className: "tag" }, cam.processor),
-        el("span", { className: "tag" }, cam.os),
-        el("span", { className: "tag" }, `${cam.firmwares.length} firmware versions`)));
-    tile.onclick = () => {
-      if (state.camera?.id !== cam.id) {
-        state.camera = cam;
-        state.firmware = null;
-        state.builds = [];
-      }
-      renderCameras();
-      renderRail();
-    };
-    tile.ondblclick = () => go("card");
-    list.append(tile);
+  for (const cam of visibleCameras) {
+    const selected = state.camera?.id === cam.id;
+    const tags = [cam.processor, cam.os].filter(Boolean).map((t) => el("span", { className: "tag" }, t));
+    if (cam.fi2) tags.push(el("span", { className: "tag ok", title: "Can load CHDK from Menu → Firmware Update" }, "Firmware Update"));
+    if (!cam.stable) tags.push(el("span", { className: "tag warn" }, "Dev builds only"));
+    const row = el("button", { className: "cam-row" + (selected ? " selected" : ""), role: "option" },
+      el("div", { className: "cam-main" },
+        el("div", { className: "title" }, `Canon ${cam.name}`),
+        cam.aliases.length ? el("div", { className: "sub" }, cam.aliases.join(" · ")) : null),
+      el("div", { className: "cam-meta" },
+        el("div", { className: "tags" }, ...tags),
+        el("div", { className: "sub" }, `firmware ${cam.firmwares.map(fwLabel).join(", ")}`)));
+    row.setAttribute("aria-selected", String(selected));
+    row.onclick = () => selectCamera(cam);
+    row.ondblclick = () => { selectCamera(cam); go("method"); };
+    list.append(row);
   }
-  if (!list.children.length) list.append(el("div", { className: "empty" }, "No camera matches that search."));
+  const n = visibleCameras.length;
+  $("#camera-count").textContent = n === state.cameras.length ? `${n} supported models` : `${n} of ${state.cameras.length} models`;
+  if (!n) list.append(el("div", { className: "empty" }, "No camera matches. Try the model number alone, like “130” or “SD790”."));
+}
+
+function scrollSelectedCamera() {
+  $("#camera-list .cam-row.selected")?.scrollIntoView({ block: "nearest" });
+}
+
+/* Arrow keys move through the results, Enter continues. */
+function cameraKeys(e) {
+  if (!["ArrowDown", "ArrowUp", "Enter"].includes(e.key)) return;
+  if (e.key === "Enter") {
+    if (visibleCameras.length === 1) selectCamera(visibleCameras[0]);
+    if (state.camera) go("method");
+    return;
+  }
+  e.preventDefault();
+  if (!visibleCameras.length) return;
+  const i = visibleCameras.findIndex((c) => c.id === state.camera?.id);
+  const next = e.key === "ArrowDown" ? Math.min(i + 1, visibleCameras.length - 1) : Math.max(i - 1, 0);
+  selectCamera(visibleCameras[i < 0 ? 0 : next]);
+  scrollSelectedCamera();
 }
 
 /* ---------- 2. card ---------- */
@@ -293,7 +364,15 @@ async function formatCard() {
 let buildsReq = 0;
 async function loadBuilds() {
   const cam = state.camera;
-  $("#fw-steps").replaceChildren(...cam.fw_check.map((t) => el("li", {}, t)));
+  const steps = cam.fw_check?.length ? cam.fw_check : [
+    "The version in the camera’s normal menu or in photo info (e.g. “1.0.0.0”) leaves out the letter CHDK needs. Use these steps to see the full version.",
+    `Press the button below to put an empty ${cam.ver_req} file on the card, then eject it.`,
+    "Put the card in the camera and switch it on in Playback mode (▶).",
+    "Hold FUNC./SET, then press DISP. (On some models: hold MENU, then press DISP.)",
+    "A line like “Firmware Ver GM1.00C” appears. 1.00C means firmware 100c.",
+  ];
+  $("#fw-steps").replaceChildren(...steps.map((t) => el("li", {}, t)));
+  if (!cam.stable && state.channel === "stable") state.channel = "trunk";
   $("#verreq-name").textContent = cam.ver_req;
   $$("#channel button").forEach((b) => b.classList.toggle("on", b.dataset.channel === state.channel));
   renderFirmwares(null);
@@ -483,6 +562,7 @@ function showDone(res) {
   const notes = [...cam.notes];
   if (auto) notes.unshift("To use the camera without CHDK, just unlock the card.");
   $("#cam-notes").replaceChildren(...notes.map((n) => el("li", {}, n)));
+  $("#cam-notes").closest("details").hidden = !notes.length;
   const trouble = [
     `“Missing module”, odd errors or crashes: the firmware letter probably doesn’t match. Check it (Firmware step → “How do I find my firmware version?”) and install the matching build.`,
     auto
@@ -545,6 +625,7 @@ $$("[data-next]").forEach((b) => (b.onclick = () => go(b.dataset.next)));
 $$("#steps li").forEach((li) => (li.onclick = () => go(li.dataset.step)));
 $$("a[data-href]").forEach((a) => (a.onclick = (e) => { e.preventDefault(); invoke("open_external", { target: a.dataset.href }); }));
 $("#camera-search").oninput = renderCameras;
+$("#camera-search").onkeydown = cameraKeys;
 $("#card-refresh").onclick = loadCards;
 $("#format-btn").onclick = formatCard;
 $("#verreq-btn").onclick = writeVerReq;
@@ -606,9 +687,13 @@ $("#again-btn").onclick = () => {
   try { theme = localStorage.getItem("theme") || "system"; } catch {}
   applyTheme(theme);
   state.cameras = await invoke("cameras");
-  $("#camera-search").hidden = state.cameras.length < 7;
-  if (state.cameras.length === 1) state.camera = state.cameras[0];
+  buildCameraIndex();
+  let last = null;
+  try { last = localStorage.getItem("camera"); } catch {}
+  state.camera = state.cameras.find((c) => c.id === last) ?? (state.cameras.length === 1 ? state.cameras[0] : null);
   renderCameras();
+  scrollSelectedCamera();
+  $("#camera-search").focus();
   go("camera");
   ensureFullDiskAccess();
 })();

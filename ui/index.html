@@ -36,10 +36,15 @@
       <section class="panel" data-panel="camera">
         <header>
           <h1>Which camera?</h1>
-          <p>Pick your camera model. More models will be added over time.</p>
+          <p>Search every Canon model CHDK supports, by any of its names (IXUS, ELPH, SD, IXY, PowerShot).</p>
         </header>
-        <input type="search" id="camera-search" class="search" placeholder="Search by name, e.g. SD790" hidden />
-        <div class="camera-grid" id="camera-list"></div>
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg>
+          <input type="search" id="camera-search" class="search" placeholder="e.g. SX130, SD790, ELPH 160, G12" autocomplete="off" spellcheck="false" aria-controls="camera-list" />
+        </div>
+        <div class="chips" id="series-chips" role="radiogroup" aria-label="Series"></div>
+        <p class="muted small" id="camera-count"></p>
+        <div class="camera-results" id="camera-list" role="listbox" aria-label="Cameras"></div>
         <footer><span></span><button class="primary" data-next="method" id="camera-next" disabled>Continue</button></footer>
       </section>
 
