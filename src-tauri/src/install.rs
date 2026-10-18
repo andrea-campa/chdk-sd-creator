@@ -15,7 +15,11 @@ pub fn validate_zip(path: &Path) -> Result<()> {
 
 /// Extract every entry of `zip_path` into `dest`, overwriting existing files.
 /// Existing user files (settings, scripts you added) are left alone.
-pub fn extract(zip_path: &Path, dest: &Path, mut progress: impl FnMut(usize, usize)) -> Result<usize> {
+pub fn extract(
+    zip_path: &Path,
+    dest: &Path,
+    mut progress: impl FnMut(usize, usize),
+) -> Result<usize> {
     let mut zip = zip::ZipArchive::new(File::open(zip_path)?)?;
     let total = zip.len();
     for i in 0..total {
@@ -85,7 +89,10 @@ mod tests {
         let card = dir.join("card");
         let n = extract(&zip_path, &card, |_, _| {}).unwrap();
         assert_eq!(n, 3);
-        assert_eq!(std::fs::read(card.join("CHDK/MODULES/lua.flt")).unwrap(), b"lua");
+        assert_eq!(
+            std::fs::read(card.join("CHDK/MODULES/lua.flt")).unwrap(),
+            b"lua"
+        );
         std::fs::remove_dir_all(&dir).unwrap();
     }
 }

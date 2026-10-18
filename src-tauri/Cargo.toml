@@ -1,8 +1,17 @@
 [package]
 name = "chdk-sd-creator"
 version = "0.1.0"
-description = "Prepare SD cards with CHDK for Canon PowerShot / IXUS cameras"
+description = "Desktop app that prepares SD cards with CHDK for Canon PowerShot and IXUS cameras"
+authors = ["Andrea Campa"]
+license = "GPL-3.0-or-later"
+repository = "https://github.com/andrea-campa/chdk-sd-creator"
+homepage = "https://github.com/andrea-campa/chdk-sd-creator"
+readme = "../README.md"
+keywords = ["chdk", "canon", "powershot", "sd-card", "tauri"]
+categories = ["multimedia::images", "filesystem"]
 edition = "2021"
+rust-version = "1.77.2"
+publish = false
 
 [lib]
 name = "chdk_sd_creator_lib"

@@ -34,7 +34,9 @@ fn cameras() -> Vec<cameras::Camera> {
 
 #[tauri::command]
 async fn builds(camera_id: String, channel: Channel) -> CmdResult<Vec<Build>> {
-    autobuild::list_builds(&camera_id, channel).await.map_err(err)
+    autobuild::list_builds(&camera_id, channel)
+        .await
+        .map_err(err)
 }
 
 #[tauri::command]
@@ -71,7 +73,10 @@ fn open_external(target: String) -> CmdResult<()> {
         return Err(format!("refusing to open {target}"));
     }
     #[cfg(target_os = "macos")]
-    std::process::Command::new("open").arg(&target).spawn().map_err(|e| e.to_string())?;
+    std::process::Command::new("open")
+        .arg(&target)
+        .spawn()
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -192,11 +197,16 @@ async fn install(
     on_progress: IpcChannel<Progress>,
 ) -> CmdResult<InstallResult> {
     let step = |t: &str| {
-        let _ = on_progress.send(Progress::Step { text: t.to_string() });
+        let _ = on_progress.send(Progress::Step {
+            text: t.to_string(),
+        });
     };
     let cam = cameras::find(&req.camera_id).map_err(err)?;
     if !cam.firmwares.contains(&req.firmware) {
-        return Err(format!("{} has no CHDK build for firmware {}", cam.name, req.firmware));
+        return Err(format!(
+            "{} has no CHDK build for firmware {}",
+            cam.name, req.firmware
+        ));
     }
     let device = req.device.clone();
     let card = blocking(move || disks::writable_card(&device)).await?;
@@ -219,7 +229,11 @@ async fn install(
         .ok_or_else(|| format!("no {} build for firmware {}", cam.id, req.firmware))?;
 
     step(&format!("Downloading {}…", build.file_name));
-    let cache = app.path().app_cache_dir().map_err(|e| e.to_string())?.join("builds");
+    let cache = app
+        .path()
+        .app_cache_dir()
+        .map_err(|e| e.to_string())?
+        .join("builds");
     let zip = autobuild::download(&build, &cache, |done, total| {
         let _ = on_progress.send(Progress::Download { done, total });
     })
@@ -230,10 +244,17 @@ async fn install(
     if card.free < zip_len * 4 {
         return Err("Not enough free space on the card.".into());
     }
-    let data = if cam.multipart { card.data_partition().cloned() } else { None };
+    let data = if cam.multipart {
+        card.data_partition().cloned()
+    } else {
+        None
+    };
     if let Some(p) = &data {
         if p.free < zip_len * 4 {
-            return Err(format!("Not enough free space on the “{}” partition.", p.name));
+            return Err(format!(
+                "Not enough free space on the “{}” partition.",
+                p.name
+            ));
         }
     }
 
@@ -251,7 +272,10 @@ async fn install(
     // On a two-partition card the camera ends up on the FAT32 partition,
     // so CHDK's files (modules, scripts, settings) must be there as well.
     if let Some(p) = &data {
-        step(&format!("Copying files to {} (where the camera keeps photos and CHDK)…", p.name));
+        step(&format!(
+            "Copying files to {} (where the camera keeps photos and CHDK)…",
+            p.name
+        ));
         let mount = p.mount_point.clone();
         let progress = on_progress.clone();
         let zip = zip.clone();
@@ -272,7 +296,12 @@ async fn install(
     }
 
     step("Done.");
-    Ok(InstallResult { build, files, bootable, data_partition: data.map(|p| p.name) })
+    Ok(InstallResult {
+        build,
+        files,
+        bootable,
+        data_partition: data.map(|p| p.name),
+    })
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

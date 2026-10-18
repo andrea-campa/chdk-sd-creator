@@ -18,7 +18,11 @@ fn run(cmd: &str, args: &[&str]) -> Result<Vec<u8>> {
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr);
         let msg = String::from_utf8_lossy(&out.stdout);
-        bail!("{cmd} {}: {}", args.join(" "), if err.trim().is_empty() { msg } else { err }.trim());
+        bail!(
+            "{cmd} {}: {}",
+            args.join(" "),
+            if err.trim().is_empty() { msg } else { err }.trim()
+        );
     }
     Ok(out.stdout)
 }
@@ -31,7 +35,10 @@ fn diskutil_plist(args: &[&str]) -> Result<Dictionary> {
 }
 
 fn s(d: &Dictionary, k: &str) -> String {
-    d.get(k).and_then(Value::as_string).unwrap_or_default().to_string()
+    d.get(k)
+        .and_then(Value::as_string)
+        .unwrap_or_default()
+        .to_string()
 }
 fn b(d: &Dictionary, k: &str) -> bool {
     d.get(k).and_then(Value::as_boolean).unwrap_or(false)
@@ -42,7 +49,10 @@ fn n(d: &Dictionary, k: &str) -> u64 {
 
 fn check_device_name(dev: &str) -> Result<()> {
     let ok = dev.strip_prefix("disk").is_some_and(|rest| {
-        !rest.is_empty() && rest.split('s').all(|p| !p.is_empty() && p.bytes().all(|c| c.is_ascii_digit()))
+        !rest.is_empty()
+            && rest
+                .split('s')
+                .all(|p| !p.is_empty() && p.bytes().all(|c| c.is_ascii_digit()))
     });
     if !ok {
         bail!("invalid device name '{dev}'");
@@ -123,7 +133,9 @@ pub fn list_cards() -> Result<Vec<Card>> {
         let path = entry?.path();
         let Some(p) = path.to_str() else { continue };
         // Volumes diskutil can't describe (network shares, …) are skipped.
-        let Ok(info) = diskutil_plist(&["info", "-plist", p]) else { continue };
+        let Ok(info) = diskutil_plist(&["info", "-plist", p]) else {
+            continue;
+        };
         if let Some(card) = card_from_info(&info)? {
             cards.push(card);
         }
@@ -131,9 +143,17 @@ pub fn list_cards() -> Result<Vec<Card>> {
     // The camera only reads the first partition, so offer one entry per card.
     let is_first = |c: &Card| c.device == c.whole_disk || c.device == format!("{}s1", c.whole_disk);
     let (mut firsts, rest): (Vec<Card>, Vec<Card>) = cards.into_iter().partition(is_first);
-    let part_no = |dev: &str| dev.rsplit('s').next().and_then(|n| n.parse::<u32>().ok()).unwrap_or(0);
+    let part_no = |dev: &str| {
+        dev.rsplit('s')
+            .next()
+            .and_then(|n| n.parse::<u32>().ok())
+            .unwrap_or(0)
+    };
     for card in &mut firsts {
-        let mut others: Vec<&Card> = rest.iter().filter(|o| o.whole_disk == card.whole_disk).collect();
+        let mut others: Vec<&Card> = rest
+            .iter()
+            .filter(|o| o.whole_disk == card.whole_disk)
+            .collect();
         others.sort_by_key(|o| part_no(&o.device));
         card.other_partitions = others
             .into_iter()
@@ -242,23 +262,39 @@ pub fn make_bootable(device: &str) -> Result<FatKind> {
 pub fn format(device: &str, layout: FormatLayout) -> Result<()> {
     let card = writable_card(device)?;
     if !card.formattable {
-        bail!("{} is not a disk this app is willing to format", card.whole_disk);
+        bail!(
+            "{} is not a disk this app is willing to format",
+            card.whole_disk
+        );
     }
     let whole = format!("/dev/{}", card.whole_disk);
     match layout {
         FormatLayout::Fat32 => {
-            run("diskutil", &["eraseDisk", "FAT32", "CANON_DC", "MBRFormat", &whole])?;
+            run(
+                "diskutil",
+                &["eraseDisk", "FAT32", "CANON_DC", "MBRFormat", &whole],
+            )?;
         }
         FormatLayout::Fat16 if card.disk_size <= FAT16_MAX + FAT16_MAX / 20 => {
-            run("diskutil", &["eraseDisk", "MS-DOS FAT16", "CANON_DC", "MBRFormat", &whole])?;
+            run(
+                "diskutil",
+                &["eraseDisk", "MS-DOS FAT16", "CANON_DC", "MBRFormat", &whole],
+            )?;
         }
         FormatLayout::Fat16 => {
             run(
                 "diskutil",
                 &[
-                    "partitionDisk", &whole, "2", "MBR",
-                    "MS-DOS FAT16", "CANON_DC", "2000M",
-                    "MS-DOS FAT32", "EXTRA", "R",
+                    "partitionDisk",
+                    &whole,
+                    "2",
+                    "MBR",
+                    "MS-DOS FAT16",
+                    "CANON_DC",
+                    "2000M",
+                    "MS-DOS FAT32",
+                    "EXTRA",
+                    "R",
                 ],
             )?;
         }

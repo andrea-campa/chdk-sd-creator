@@ -24,13 +24,23 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg"],
+    "targets": [
+      "app",
+      "dmg"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "category": "Utility",
+    "shortDescription": "Prepare SD cards with CHDK for Canon cameras",
+    "longDescription": "CHDK SD Creator downloads the right CHDK build for your Canon PowerShot or IXUS camera, copies it to an SD card and can make the card bootable.",
+    "copyright": "Copyright © 2026 Andrea Campa. Licensed under GPL-3.0-or-later.",
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
   }
 }
