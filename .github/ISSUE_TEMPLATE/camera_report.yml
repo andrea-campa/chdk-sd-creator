@@ -1,0 +1,50 @@
+name: Camera report
+description: Tell us whether CHDK worked on your camera
+labels: [camera report]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks! Reports like this are how we know which cameras are tested.
+  - type: input
+    id: camera
+    attributes:
+      label: Camera model
+      placeholder: e.g. PowerShot SX130 IS
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version
+      placeholder: e.g. 1.01D
+    validations:
+      required: true
+  - type: dropdown
+    id: method
+    attributes:
+      label: Start method
+      options:
+        - Firmware Update
+        - Autoboot
+    validations:
+      required: true
+  - type: input
+    id: card
+    attributes:
+      label: SD card
+      placeholder: e.g. 16 GB, formatted by the app as FAT16 + FAT32
+  - type: dropdown
+    id: result
+    attributes:
+      label: Did CHDK start?
+      options:
+        - Yes, everything works
+        - Yes, but with problems (describe below)
+        - "No"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Anything odd? Error messages on the camera screen?
